@@ -1,19 +1,25 @@
 <template>
-  <div class="card">
-    <h3>ชำระค่ามัดจำ</h3>
+  <div class="page">
+    <div class="card">
+      <h3>💳 ชำระค่ามัดจำ</h3>
 
-    <p class="rid">รหัสการจอง: {{ rid }}</p>
-    <p class="price">💰 ค่ามัดจำ 500 บาท</p>
+      <p class="rid">รหัสการจอง: {{ rid }}</p>
+      <p class="price">💰 ค่ามัดจำ 500 บาท</p>
 
-    <img src="/qrc.jpg" class="qr" alt="QR Code" />
+      <img src="/qrc.jpg" class="qr" alt="QR Code" />
 
-    <p class="hint">สแกนเพื่อชำระเงิน แล้วอัปโหลดสลิป</p>
+      <p class="hint">สแกนเพื่อชำระเงิน แล้วอัปโหลดสลิป</p>
 
-    <input type="file" accept="image/*" @change="onFile" />
+      <input
+        type="file"
+        accept="image/*"
+        @change="onFile"
+      />
 
-    <button @click="pay">
-      ยืนยันการชำระเงิน
-    </button>
+      <button @click="pay">
+        ยืนยันการชำระเงิน
+      </button>
+    </div>
   </div>
 </template>
 
@@ -48,7 +54,6 @@ export default {
 
         if (res.success) {
           alert('ชำระเงินเรียบร้อย')
-          // 👉 ไปหน้ารายการจองของฉัน
           this.$router.push('/reserve/my-bookings')
         } else {
           alert(res.message)
@@ -63,22 +68,92 @@ export default {
 </script>
 
 <style scoped>
+/* พื้นหลังเต็มจอ */
+.page {
+  min-height: 100vh;
+  width: 100vw;
+  background:
+    radial-gradient(circle at top, #fff7ed, transparent 60%),
+    linear-gradient(135deg, #ffe7cf, #ffd2a8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* Card */
 .card {
   max-width: 420px;
-  margin: 50px auto;
-  padding: 20px;
-  border-radius: 12px;
+  width: 100%;
+  padding: 24px;
+  border-radius: 20px;
   background: #fff;
-  box-shadow: 0 4px 10px rgba(0,0,0,.1);
+  box-shadow: 0 16px 36px rgba(0,0,0,.15);
   text-align: center;
+  animation: fadeUp 0.5s ease;
 }
-.qr { width: 220px; margin: auto; }
-.price { color: #ff7a00; font-weight: bold; }
+
+h3 {
+  margin-bottom: 12px;
+  color: #d35400;
+}
+
+.rid {
+  font-size: 14px;
+  color: #777;
+}
+
+.price {
+  color: #ff7a00;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.qr {
+  width: 220px;
+  margin: 16px auto;
+  border-radius: 12px;
+}
+
+.hint {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+input[type="file"] {
+  margin: 10px 0;
+}
+
+/* Button */
 button {
-  background: #ff7a00;
+  width: 100%;
+  margin-top: 14px;
+  background: linear-gradient(135deg, #ff7a00, #ff9a3c);
   color: #fff;
   border: none;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(255,122,0,.45);
+}
+
+/* Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

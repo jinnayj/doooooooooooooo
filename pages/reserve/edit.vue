@@ -1,32 +1,37 @@
 <template>
   <div class="page">
-    <h2>✏️ แก้ไขการจอง</h2>
+    <div class="card">
+      <h2>✏️ แก้ไขการจอง</h2>
 
-    <div v-if="loading">
-      กำลังโหลดข้อมูล...
-    </div>
+      <div v-if="loading" class="loading">
+        ⏳ กำลังโหลดข้อมูล...
+      </div>
 
-    <div v-else class="card">
-      <p class="rid">รหัสการจอง: {{ rid }}</p>
+      <div v-else class="form">
+        <div class="field">
+          <label>ชื่อผู้จอง</label>
+          <input v-model="form.name" />
+        </div>
 
-      <label>โต๊ะ</label>
-      <input type="number" v-model="form.table_id" />
+        <div class="field">
+          <label>เบอร์โทร</label>
+          <input v-model="form.phone" />
+        </div>
 
-      <label>ชื่อผู้จอง</label>
-      <input v-model="form.name" />
+        <div class="field">
+          <label>วันที่</label>
+          <input type="date" v-model="form.reserve_date" />
+        </div>
 
-      <label>เบอร์โทร</label>
-      <input v-model="form.phone" />
+        <div class="field">
+          <label>เวลา</label>
+          <input type="time" v-model="form.reserve_time" />
+        </div>
 
-      <label>วันที่</label>
-      <input type="date" v-model="form.reserve_date" />
-
-      <label>เวลา</label>
-      <input type="time" v-model="form.reserve_time" />
-
-      <button @click="save">
-        บันทึกการแก้ไข
-      </button>
+        <button @click="save">
+          💾 บันทึกการแก้ไข
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -35,10 +40,9 @@
 export default {
   data() {
     return {
-      rid: this.$route.query.rid,
       loading: true,
+      rid: null,
       form: {
-        table_id: '',
         name: '',
         phone: '',
         reserve_date: '',
@@ -48,35 +52,20 @@ export default {
   },
 
   async mounted() {
-    if (!this.rid) {
-      alert('ไม่พบรหัสการจอง')
-      this.$router.push('/reserve/my-bookings')
-      return
-    }
+    this.rid = this.$route.query.rid
 
     try {
-      const res = await this.$axios.$get(
-        `/backend/reserve/get.php?rid=${this.rid}`
+      const res = await this.$axios.get(
+        `http://localhost:8081/backend/reservations/get.php?id=${this.rid}`
       )
 
-      if (!res.success) {
-        alert(res.message)
-        this.$router.push('/reserve/my-bookings')
-        return
-      }
-
-      this.form = {
-        table_id: res.data.table_id,
-        name: res.data.name,
-        phone: res.data.phone,
-        reserve_date: res.data.reserve_date,
-        reserve_time: res.data.reserve_time.substring(0,5)
+      if (res.data) {
+        this.form = res.data
       }
 
     } catch (e) {
       console.error(e)
       alert('เชื่อมต่อ backend ไม่ได้')
-      this.$router.push('/reserve/my-bookings')
     } finally {
       this.loading = false
     }
@@ -84,42 +73,21 @@ export default {
 
   methods: {
     async save() {
-      if (
-        !this.form.table_id ||
-        !this.form.name ||
-        !this.form.phone ||
-        !this.form.reserve_date ||
-        !this.form.reserve_time
-      ) {
-        alert('กรุณากรอกข้อมูลให้ครบ')
-        return
-      }
-
-      const payload = {
-        id: Number(this.rid),
-        table_id: Number(this.form.table_id),
-        name: this.form.name.trim(),
-        phone: this.form.phone.trim(),
-        reserve_date: this.form.reserve_date,
-        reserve_time: this.form.reserve_time + ':00'
-      }
-
       try {
-        const res = await this.$axios.$post(
-          '/backend/reserve/update.php',
-          payload
+        await this.$axios.post(
+          'http://localhost:8081/backend/reservations/update.php',
+          {
+            id: this.rid,
+            ...this.form
+          }
         )
 
-        if (res.success) {
-          alert('บันทึกเรียบร้อย')
-          this.$router.push('/reserve/my-bookings')
-        } else {
-          alert(res.message || 'บันทึกไม่สำเร็จ')
-        }
+        alert('บันทึกเรียบร้อยแล้ว ✅')
+        this.$router.push('/reserve/my-bookings')
 
       } catch (e) {
         console.error(e)
-        alert('เชื่อมต่อ backend ไม่ได้')
+        alert('บันทึกไม่สำเร็จ')
       }
     }
   }
@@ -127,34 +95,96 @@ export default {
 </script>
 
 <style scoped>
+/* พื้นหลังเต็มจอ */
 .page {
-  max-width: 500px;
-  margin: auto;
+  min-height: 100vh;
+  width: 100vw;
+  background:
+    radial-gradient(circle at top, #fff7ed, transparent 60%),
+    linear-gradient(135deg, #ffe7cf, #ffd2a8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
+
+/* Card */
 .card {
+  width: 100%;
+  max-width: 420px;
   background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.1);
+  padding: 28px;
+  border-radius: 20px;
+  box-shadow: 0 18px 36px rgba(0,0,0,.15);
+  animation: fadeUp 0.5s ease;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #d35400;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  color: #777;
+}
+
+/* Form */
+.form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
+
+.field label {
+  font-size: 13px;
+  color: #555;
+}
+
 input {
-  padding: 10px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
   border: 1px solid #ddd;
+  font-size: 15px;
+  outline: none;
+  transition: 0.2s;
 }
+
+input:focus {
+  border-color: #ff8c1a;
+  box-shadow: 0 0 0 2px rgba(255,140,26,.15);
+}
+
+/* Button */
 button {
   margin-top: 10px;
-  padding: 12px;
-  background: #ff7a00;
-  color: white;
+  padding: 14px;
+  border-radius: 14px;
   border: none;
-  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(135deg, #28a745, #4fd16b);
+  color: #fff;
+  transition: 0.25s;
 }
-.rid {
-  font-size: 13px;
-  color: #999;
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(40,167,69,.45);
+}
+
+/* Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
