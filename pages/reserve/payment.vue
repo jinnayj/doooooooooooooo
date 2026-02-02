@@ -1,23 +1,40 @@
 <template>
   <div class="page">
     <div class="card">
-      <h3>💳 ชำระค่ามัดจำ</h3>
+      <!-- Header -->
+      <div class="header">
+        <h2>💳 ชำระค่ามัดจำ</h2>
+        <p class="subtitle">สแกน QR เพื่อโอนเงิน และอัปโหลดสลิป</p>
+      </div>
 
-      <p class="rid">รหัสการจอง: {{ rid }}</p>
-      <p class="price">💰 ค่ามัดจำ 500 บาท</p>
+      <!-- QR -->
+      <div class="qr-box">
+        <img
+          src="/qr.png"
+          alt="QR Payment"
+          class="qr"
+        />
+        <p class="amount">ยอดมัดจำ <b>500 บาท</b></p>
+      </div>
 
-      <img src="/qrc.jpg" class="qr" alt="QR Code" />
+      <!-- Upload -->
+      <div class="upload-box">
+        <label class="upload-btn">
+          📤 เลือกรูปสลิป
+          <input type="file" hidden @change="onFile" />
+        </label>
 
-      <p class="hint">สแกนเพื่อชำระเงิน แล้วอัปโหลดสลิป</p>
+        <p v-if="file" class="filename">
+          {{ file.name }}
+        </p>
+      </div>
 
-      <input
-        type="file"
-        accept="image/*"
-        @change="onFile"
-      />
+      <!-- Error -->
+      <p v-if="error" class="error">{{ error }}</p>
 
-      <button @click="pay">
-        ยืนยันการชำระเงิน
+      <!-- Button -->
+      <button class="confirm" @click="upload">
+        ✅ ยืนยันการชำระ
       </button>
     </div>
   </div>
@@ -27,40 +44,54 @@
 export default {
   data() {
     return {
-      rid: this.$route.query.rid,
-      slip: null
+      file: null,
+      error: ''
     }
   },
+
+  computed: {
+    bookingId() {
+      return this.$route.query.id
+    }
+  },
+
   methods: {
     onFile(e) {
-      this.slip = e.target.files[0]
+      this.file = e.target.files[0]
     },
 
-    async pay() {
-      if (!this.slip) {
-        alert('กรุณาอัปโหลดสลิป')
+    async upload() {
+      this.error = ''
+
+      if (!this.bookingId) {
+        this.error = 'ไม่พบรหัสการจอง'
         return
       }
 
-      const form = new FormData()
-      form.append('rid', this.rid)
-      form.append('slip', this.slip)
+      if (!this.file) {
+        this.error = 'กรุณาอัปโหลดสลิป'
+        return
+      }
+
+      const fd = new FormData()
+      fd.append('id', this.bookingId)
+      fd.append('slip', this.file)
 
       try {
-        const res = await this.$axios.$post(
-          'reservations/upload_slip.php',
-          form
+        const res = await this.$axios.post(
+          'http://localhost:8081/backend-1/reservations/upload-slip.php',
+          fd
         )
 
-        if (res.success) {
-          alert('ชำระเงินเรียบร้อย')
+        if (res.data.success) {
+          alert('🎉 ชำระเงินเรียบร้อย')
           this.$router.push('/reserve/my-bookings')
         } else {
-          alert(res.message)
+          this.error = res.data.message || 'อัปโหลดไม่สำเร็จ'
         }
       } catch (e) {
         console.error(e)
-        alert('อัปโหลดไม่สำเร็จ')
+        this.error = 'เชื่อมต่อ backend ไม่ได้'
       }
     }
   }
@@ -68,92 +99,110 @@ export default {
 </script>
 
 <style scoped>
-/* พื้นหลังเต็มจอ */
+/* Page */
 .page {
   min-height: 100vh;
-  width: 100vw;
-  background:
-    radial-gradient(circle at top, #fff7ed, transparent 60%),
-    linear-gradient(135deg, #ffe7cf, #ffd2a8);
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 16px;
+  align-items: center;
+  background:
+    radial-gradient(circle at top, #fff3e0, transparent 60%),
+    linear-gradient(135deg, #ffe0c2, #ffd0a6);
+  padding: 20px;
 }
 
 /* Card */
 .card {
-  max-width: 420px;
   width: 100%;
-  padding: 24px;
-  border-radius: 20px;
+  max-width: 380px;
   background: #fff;
-  box-shadow: 0 16px 36px rgba(0,0,0,.15);
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.15);
   text-align: center;
-  animation: fadeUp 0.5s ease;
 }
 
-h3 {
-  margin-bottom: 12px;
-  color: #d35400;
+/* Header */
+.header h2 {
+  margin: 0;
+  color: #e67e22;
 }
 
-.rid {
-  font-size: 14px;
+.subtitle {
+  font-size: 13px;
   color: #777;
+  margin-top: 4px;
 }
 
-.price {
-  color: #ff7a00;
-  font-weight: bold;
-  margin: 10px 0;
+/* QR */
+.qr-box {
+  margin: 20px 0;
 }
 
 .qr {
-  width: 220px;
-  margin: 16px auto;
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.15);
+}
+
+.amount {
+  margin-top: 10px;
+  font-size: 15px;
+  color: #d35400;
+}
+
+/* Upload */
+.upload-box {
+  margin-top: 16px;
+}
+
+.upload-btn {
+  display: inline-block;
+  padding: 10px 18px;
+  background: #fff4e6;
+  color: #d35400;
   border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.hint {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 10px;
+.upload-btn:hover {
+  background: #ffe8cc;
 }
 
-input[type="file"] {
-  margin: 10px 0;
+.filename {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+}
+
+/* Error */
+.error {
+  margin-top: 12px;
+  color: #e74c3c;
+  font-size: 14px;
 }
 
 /* Button */
-button {
+.confirm {
+  margin-top: 18px;
   width: 100%;
-  margin-top: 14px;
-  background: linear-gradient(135deg, #ff7a00, #ff9a3c);
-  color: #fff;
+  padding: 14px;
   border: none;
-  padding: 12px;
   border-radius: 14px;
+  background: linear-gradient(135deg, #ff7a00, #ff9a3c);
+  color: white;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   transition: 0.25s;
 }
 
-button:hover {
+.confirm:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(255,122,0,.45);
-}
-
-/* Animation */
-@keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  box-shadow: 0 12px 24px rgba(255,122,0,0.45);
 }
 </style>

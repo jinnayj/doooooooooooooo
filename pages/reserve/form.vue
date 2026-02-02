@@ -3,72 +3,16 @@
     <div class="card">
       <h2>📝 ข้อมูลการจอง</h2>
 
-      <p class="selected-table">
-        🪑 โต๊ะที่เลือก: <b>#{{ table_id }}</b>
-      </p>
+      <input v-model="name" placeholder="ชื่อผู้จอง" />
+      <input v-model="phone" placeholder="เบอร์โทร" />
+      <input type="date" v-model="date" />
+      <input type="time" v-model="time" />
 
-      <!-- ฟอร์ม -->
-      <div class="form">
-        <div class="field">
-          <label>วันที่</label>
-          <input type="date" v-model="date" />
-        </div>
-
-        <div class="field">
-          <label>เวลา</label>
-          <input type="time" v-model="time" />
-        </div>
-
-        <div class="field">
-          <label>ชื่อผู้จอง</label>
-          <input v-model="name" />
-        </div>
-
-        <div class="field">
-          <label>เบอร์โทร</label>
-          <input v-model="phone" />
-        </div>
-      </div>
-
-      <!-- เมนูอาหาร -->
-      <div class="menus">
-        <label>🍽️ เลือกเมนูอาหาร (ไม่เกิน 3 อย่าง)</label>
-
-        <div class="menu-list">
-          <label
-            v-for="m in menus"
-            :key="m.id"
-            class="menu-item"
-          >
-            <input
-              type="checkbox"
-              :value="m"
-              v-model="selectedMenus"
-              :disabled="selectedMenus.length >= 3 && !selectedMenus.includes(m)"
-            />
-            {{ m.name }} ({{ m.price }} บาท)
-          </label>
-        </div>
-      </div>
-
-      <!-- ราคา -->
-      <p class="deposit">
-        💰 มัดจำพื้นฐาน {{ baseDeposit }} บาท
-      </p>
-
-      <p class="deposit">
-        🍽️ ราคาอาหาร {{ menuTotal }} บาท
-      </p>
-
-      <p class="deposit total">
-        💵 รวมทั้งหมด {{ totalDeposit }} บาท
-      </p>
+      <p class="deposit">💰 มัดจำ 500 บาท</p>
 
       <p v-if="error" class="error">{{ error }}</p>
 
-      <button class="btn" @click="reserve">
-        ยืนยันการจอง
-      </button>
+      <button @click="reserve">ถัดไป → ชำระเงิน</button>
     </div>
   </div>
 </template>
@@ -77,81 +21,83 @@
 export default {
   data() {
     return {
-      table_id: null,
       name: '',
       phone: '',
       date: '',
       time: '',
-      error: '',
-
-      baseDeposit: 500,
-
-      menus: [],
-      selectedMenus: []
+      error: ''
     }
   },
-
-  computed: {
-    menuTotal() {
-      return this.selectedMenus.reduce(
-        (sum, m) => sum + Number(m.price),
-        0
-      )
-    },
-    totalDeposit() {
-      return this.baseDeposit + this.menuTotal
-    }
-  },
-
-  async mounted() {
-    this.table_id = this.$route.query.table
-    if (!this.table_id) {
-      this.$router.push('/tables/available')
-      return
-    }
-
-    try {
-      const res = await this.$axios.get('menus.php')
-      this.menus = res.data
-    } catch (e) {
-      this.error = 'โหลดเมนูไม่สำเร็จ'
-      console.error(e)
-    }
-  },
-
   methods: {
     async reserve() {
-      this.error = ''
-
-      if (!this.name || !this.phone || !this.date || !this.time) {
-        this.error = 'กรุณากรอกข้อมูลให้ครบ'
-        return
-      }
-
-      if (this.selectedMenus.length === 0) {
-        this.error = 'กรุณาเลือกเมนูอาหาร'
-        return
-      }
-
       try {
-        await this.$axios.post('reserve.php', {
-          table_id: this.table_id,
-          name: this.name,
-          phone: this.phone,
-          date: this.date,
-          time: this.time,
-          menus: this.selectedMenus,
-          deposit: this.totalDeposit
-        })
+        const res = await this.$axios.$post(
+          'http://localhost:8081/backend-1/reservations/create.php',
+          {
+            table_id: Number(this.$route.query.table),
+            name: this.name,
+            phone: this.phone,
+            reserve_date: this.date,
+            reserve_time: this.time.length === 5
+              ? this.time + ':00'
+              : this.time,
+            deposit: 500
+          }
+        )
 
-        alert('🎉 จองสำเร็จ')
-        this.$router.push('/')
+        if (res.success) {
+          this.$router.push('/reserve/payment?id=' + res.booking_id)
+        } else {
+          this.error = res.message
+        }
+
       } catch (e) {
-        this.error = 'บันทึกการจองไม่สำเร็จ'
         console.error(e)
+        this.error = 'เชื่อมต่อ backend ไม่ได้'
       }
     }
   }
 }
 </script>
 
+<style scoped>
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg,#ffe0c2,#ffd0a6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.card {
+  width: 360px;
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.15);
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg,#ff7a00,#ff9a3c);
+  border: none;
+  color: white;
+  border-radius: 14px;
+}
+.deposit {
+  margin-top: 12px;
+  text-align: center;
+  color: #d35400;
+}
+.error {
+  color: red;
+  text-align: center;
+}
+</style>

@@ -16,7 +16,7 @@ export default {
   modules: ['@nuxtjs/axios'],
 
   axios: {
-    baseURL: 'http://localhost:8081/backend'
+    baseURL: 'http://localhost:8081/backend-1'
   },
 
   css: [

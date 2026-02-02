@@ -1,29 +1,39 @@
 <template>
   <div class="page">
-    <div class="wrapper">
-      <h2>📋 รายการจองของฉัน</h2>
+    <h2 class="title">📋 รายการจองของฉัน</h2>
 
-      <div v-if="bookings.length === 0" class="empty">
-        😔 ยังไม่มีรายการจอง
-      </div>
-
+    <div class="list">
       <div
         v-for="r in bookings"
         :key="r.id"
         class="card"
       >
+        <!-- แถวบน -->
         <div class="top">
-          <span class="table">🍽 โต๊ะ {{ r.table_id }}</span>
+          <span class="table">โต๊ะ #{{ r.table_id }}</span>
           <span class="status" :class="r.status">
             {{ r.status }}
           </span>
         </div>
 
-        <p>👤 {{ r.name }}</p>
-        <p>📞 {{ r.phone }}</p>
-        <p>📅 {{ r.reserve_date }} ⏰ {{ r.reserve_time }}</p>
+        <!-- ข้อมูล -->
+        <div class="info">
+          <div>
+            <span class="label">ชื่อ</span>
+            <span>{{ r.name }}</span>
+          </div>
+          <div>
+            <span class="label">วันที่</span>
+            <span>{{ r.reserve_date }}</span>
+          </div>
+          <div>
+            <span class="label">เวลา</span>
+            <span>{{ r.reserve_time }}</span>
+          </div>
+        </div>
 
-        <button @click="goEdit(r.id)">
+        <!-- ปุ่ม -->
+        <button class="edit" @click="edit(r.id)">
           ✏️ แก้ไขการจอง
         </button>
       </div>
@@ -41,68 +51,59 @@ export default {
 
   async mounted() {
     try {
-      const res = await this.$axios.get(
-        'http://localhost:8081/backend/reservations/my_bookings.php'
+      const res = await this.$axios.$get(
+        'http://localhost:8081/backend-1/reservations/list.php'
       )
-
-      this.bookings = Array.isArray(res.data) ? res.data : []
-
+      this.bookings = res
     } catch (e) {
-      console.error('โหลดรายการจองไม่สำเร็จ', e)
-      alert('เชื่อมต่อ backend ไม่ได้')
-      this.bookings = []
+      alert('โหลดข้อมูลไม่สำเร็จ')
+      console.error(e)
     }
   },
 
   methods: {
-    goEdit(id) {
-      this.$router.push(`/reserve/edit?rid=${id}`)
+    edit(id) {
+      this.$router.push(`/reserve/edit?id=${id}`)
     }
   }
 }
 </script>
 
 <style scoped>
-/* พื้นหลังเต็มจอ */
+/* หน้า */
 .page {
   min-height: 100vh;
-  width: 100vw;
   background:
-    radial-gradient(circle at top, #fff7ed, transparent 60%),
-    linear-gradient(135deg, #ffe7cf, #ffd2a8);
-  padding: 40px 16px;
+    radial-gradient(circle at top, #fff3e0, transparent 60%),
+    linear-gradient(135deg, #ffe0c2, #ffd0a6);
+  padding: 24px 16px;
 }
 
-/* กล่องกลาง */
-.wrapper {
-  max-width: 720px;
-  margin: auto;
-}
-
-h2 {
-  margin-bottom: 20px;
+/* หัวข้อ */
+.title {
+  text-align: center;
+  margin-bottom: 18px;
   color: #d35400;
 }
 
-/* ไม่มีข้อมูล */
-.empty {
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 6px 16px rgba(0,0,0,.1);
-}
-
-/* Card */
-.card {
-  background: #fff;
-  padding: 18px;
-  margin-bottom: 14px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+/* กล่องรวม (จัดกลาง) */
+.list {
+  max-width: 460px;
+  margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 14px;
+}
+
+/* การ์ด */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* แถวบน */
@@ -113,17 +114,15 @@ h2 {
 }
 
 .table {
-  font-weight: bold;
-  color: #ff7a00;
+  font-weight: 600;
+  color: #e67e22;
 }
 
 /* สถานะ */
 .status {
+  font-size: 12px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 13px;
-  font-weight: bold;
-  background: #eee;
 }
 
 .status.pending {
@@ -141,22 +140,33 @@ h2 {
   color: #721c24;
 }
 
-/* ปุ่ม */
-button {
-  margin-top: 10px;
-  align-self: flex-end;
-  background: linear-gradient(135deg, #ff7a00, #ff9a3c);
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.2s;
+/* ข้อมูล */
+.info {
+  font-size: 13px;
+  color: #444;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(255,122,0,.4);
+.label {
+  color: #999;
+  margin-right: 6px;
+}
+
+/* ปุ่ม */
+.edit {
+  margin-top: 8px;
+  border: none;
+  background: linear-gradient(135deg, #ff7a00, #ff9a3c);
+  color: white;
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.edit:hover {
+  opacity: 0.9;
 }
 </style>
